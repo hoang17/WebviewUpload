@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { WebView, Image, Linking } from 'react-native'
+import { WebView, Image, Linking, Button } from 'react-native'
 import ImagePicker from 'react-native-image-picker'
 
 import {
@@ -62,63 +62,57 @@ type Props = {}
 export default class App extends Component<Props> {
 
   state = {
-    uri: 'http://192.168.100.11:3000/',
-    avatarSource: null
+    uri: 'https://webview-upload-server.herokuapp.com/',
+    avatarSource: null,
+    fileName: null,
   }
 
-  onMessage = data => {
-    // console.log(data)
-    ImagePicker.launchImageLibrary(options, response => {
-      console.log(response)
+  onMessage = event => {
+    // console.log(event.nativeEvent.data)
 
-      var { uri, fileName } = response
+    if (event.nativeEvent.data == 'upload_file'){
+      ImagePicker.launchImageLibrary(options, response => {
+        console.log(response)
 
-      // let source = { uri: 'data:image/jpegbase64,' + response.data }
-      this.setState({
-        avatarSource: { uri }
+        var { uri, fileName } = response
+
+        // let source = { uri: 'data:image/jpegbase64,' + response.data }
+        this.setState({
+          avatarSource: { uri },
+          fileName: fileName,
+        })
+
+        var fieldName = 'sampleFile'
+
+        const body = new FormData()
+        body.append(fieldName, {
+          uri: uri,
+          type: 'image/jpeg',
+          name: fileName,
+        })
+        fetch(uploadUrl, {
+          method: 'post',
+          body: body
+        }).then(res => {
+          console.log(res)
+          this.refs.webview.postMessage(fileName)
+        })
       })
-
-      var fieldName = 'sampleFile'
-
-      const body = new FormData()
-      body.append(fieldName, {
-        uri: uri,
-        type: 'image/jpeg',
-        name: fileName,
-      })
-      fetch(uploadUrl, {
-        method: 'post',
-        body: body
-      }).then(res => {
-        console.log(res)
-        this.refs.webview.postMessage(fileName)
-      })
-
-    })
-  }
-
-  openExternalLink = req => {
-    if (req.url != this.state.uri){
-      Linking.openURL(req.url)
-      // var { uri } = this.state
-      // this.setState({ uri })
-      return false
+    } else {
+      Linking.openURL(baseUrl + this.state.fileName)
     }
-    return true
   }
 
   render() {
-    // const uri = 'https://webview-upload-server.herokuapp.com/'
     const { uri } = this.state
     return (
       <View style={styles.container}>
-        <Image source={this.state.avatarSource} style={styles.uploadAvatar} />
+        {/* <Image source={this.state.avatarSource} style={styles.uploadAvatar} /> */}
         <WebView
           source={{ uri }}
           style={styles.webview}
           onMessage={this.onMessage}
           ref="webview"
-          onShouldStartLoadWithRequest={this.openExternalLink}
         />
       </View>
     )
