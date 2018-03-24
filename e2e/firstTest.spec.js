@@ -12,5 +12,6 @@ describe('Test', () => {
     await expect(element(by.id('photos'))).toBeVisible()
     await element(by.type('RCTImageView')).atIndex(0).tap()
     await expect(element(by.id('upload_status'))).toHaveText("File uploaded")
+    await element(by.id('upload_file')).tapAtPoint({x:150, y:20})
   })
 })
